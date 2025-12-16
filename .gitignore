@@ -1,0 +1,50 @@
+# === Python & Bytecode ===
+__pycache__/
+*.py[cod]
+*$py.class
+
+# === Conda & Virtual Environments ===
+# Игнорируем папку с окружением, если вы создали её внутри проекта
+.venv/
+env/
+venv/
+ENV/
+
+# === Jupyter Notebooks ===
+# Временные контрольные точки ноутбуков (обязательно игнорировать!)
+.ipynb_checkpoints/
+*/.ipynb_checkpoints/
+
+# === IDE (Cursor / VS Code) ===
+.vscode/
+.idea/
+
+# === Data (Данные) ===
+# Никогда не храните сырые данные в Git!
+data/
+datasets/
+*.csv
+*.tsv
+*.json
+*.xml
+*.parquet
+*.h5
+*.hdf5
+
+# === Models (Веса моделей) ===
+# Файлы моделей обычно тяжелые
+*.pkl
+*.pickle
+*.pt        # PyTorch models
+*.pth       # PyTorch weights
+*.onnx
+
+# === Logs & Temp ===
+*.log
+logs/
+tmp/
+cache/
+
+# === Windows System Files ===
+Thumbs.db
+Desktop.ini

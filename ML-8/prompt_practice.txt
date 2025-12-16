@@ -1,0 +1,136 @@
+Мне нужно провести анализ данных - кластеризовать клиентов банка по характеру финансового поведения с продуктом банка (кредитная карта).
+
+
+Описание исходных данных датасета
+
+CUSTID: Идентификационный номер держателя карты
+
+BALANCE: Доступный для трат баланс
+
+BALANCEFREQUENCY: Признак, показывающий как часто обновляется баланс, изменяется от 0 (никогда не обновляется) до 1 (очень часто обновляется)
+
+PURCHASES: Количество покупок сделанное с карты
+
+ONEOFFPURCHASES: Максимально поличество покупок «за раз»
+
+INSTALLMENTSPURCHASES: Сумма покупок в рассрочку
+
+CASHADVANCE: Сумма овердрафта
+
+PURCHASESFREQUENCY: Признак, показывающий как часто делаются покупки с карты, изменяется от 0 (никогда не используется) до 1 (постоянно используется)
+
+ONEOFFPURCHASESFREQUENCY: Признак, показывающий как часто Покупки происходят за один раз, изменяется от 0 (редко покупаются) до 1 (часто покупаются)
+
+PURCHASESINSTALLMENTSFREQUENCY: Признак, показывающий как часто Покупки происходят в рассрочку, изменяется от 0 (редко покупаются) до 1 (часто покупаются)
+
+CASHADVANCEFREQUENCY: Как часто платится овердрафтом
+
+CASHADVANCETRX: Количество оплат в овердрафте
+
+PURCHASESTRX: Количество транзакций покупок
+
+CREDITLIMIT: Лимит кредита по карте
+
+PAYMENTS: Задолженность по карте
+
+MINIMUM_PAYMENTS: Минимальный платеж по задолженности
+
+PRCFULLPAYMENT: Платеж для беспроцентного периода
+
+TENURE: Стоимость обслуживания карты
+
+data= pd.read_csv("data/CC GENERAL.csv")
+
+Для работы с выбросами сделаем диапазоновые значения признаков, для этого будем использовать функцию
+# Функция преобразует непрерывные числовые признаки в категориальные путем разбиения на диапазоны.
+def add_range(df, columns, range_list, onesided = True):
+    for column in columns:
+        name = column + '_range'
+        df[name] = 0
+        for i in range(len(range_list)-1):
+            df.loc[(df[column] > range_list[i])&(df[column] <= range_list[i+1]), name] = i+1
+            if onesided:
+                df.loc[(df[column] >range_list[-1]), name] = len(range_list)
+    df.drop(columns, axis = 1, inplace = True)
+
+add_range(data,['BALANCE', 'PURCHASES', 'ONEOFF_PURCHASES', 'INSTALLMENTS_PURCHASES', 'CASH_ADVANCE', 'CREDIT_LIMIT',
+        'PAYMENTS', 'MINIMUM_PAYMENTS'], [0,500,1000,3000,5000,10000])
+add_range(data,['BALANCE_FREQUENCY', 'PURCHASES_FREQUENCY', 'ONEOFF_PURCHASES_FREQUENCY', 'PURCHASES_INSTALLMENTS_FREQUENCY', 
+         'CASH_ADVANCE_FREQUENCY', 'PRC_FULL_PAYMENT'] , np.linspace(0,1,11),onesided=False)
+add_range(data,['PURCHASES_TRX', 'CASH_ADVANCE_TRX'] ,[0,5,10,15,20,30,50,100] ,onesided=False)
+data.drop(['CUST_ID'], axis=1, inplace=True)
+data.info()
+<class 'pandas.core.frame.DataFrame'>
+RangeIndex: 8950 entries, 0 to 8949
+Data columns (total 17 columns):
+ #   Column                                  Non-Null Count  Dtype
+---  ------                                  --------------  -----
+ 0   TENURE                                  8950 non-null   int64
+ 1   BALANCE_range                           8950 non-null   int64
+ 2   PURCHASES_range                         8950 non-null   int64
+ 3   ONEOFF_PURCHASES_range                  8950 non-null   int64
+ 4   INSTALLMENTS_PURCHASES_range            8950 non-null   int64
+ 5   CASH_ADVANCE_range                      8950 non-null   int64
+ 6   CREDIT_LIMIT_range                      8950 non-null   int64
+ 7   PAYMENTS_range                          8950 non-null   int64
+ 8   MINIMUM_PAYMENTS_range                  8950 non-null   int64
+ 9   BALANCE_FREQUENCY_range                 8950 non-null   int64
+ 10  PURCHASES_FREQUENCY_range               8950 non-null   int64
+ 11  ONEOFF_PURCHASES_FREQUENCY_range        8950 non-null   int64
+ 12  PURCHASES_INSTALLMENTS_FREQUENCY_range  8950 non-null   int64
+ 13  CASH_ADVANCE_FREQUENCY_range            8950 non-null   int64
+ 14  PRC_FULL_PAYMENT_range                  8950 non-null   int64
+ 15  PURCHASES_TRX_range                     8950 non-null   int64
+ 16  CASH_ADVANCE_TRX_range                  8950 non-null   int64
+dtypes: int64(17)
+memory usage: 1.2 MB
+
+
+X= np.asarray(data)
+
+scale = StandardScaler()
+X = scale.fit_transform(X)
+X.shape
+
+kmeans = KMeans()
+
+
+Elbow_M = KElbowVisualizer(
+    kmeans, 
+    k=20,
+    metric='distortion',  # или 'inertia'
+    timings=True  # показать время вычислений
+)
+
+#Elbow_M = KElbowVisualizer(kmeans, k=20)
+Elbow_M.fit(X)
+Elbow_M.show()
+
+k_clust = Elbow_M.elbow_value_ # сюда вставить ответ на задачу 8.2
+print(f"Оптимальное количество кластеров: {k_clust}")
+
+print(f"Значение метрики при оптимальном k: {Elbow_M.elbow_score_}")
+
+Оптимальное количество кластеров: 8
+Значение метрики при оптимальном k: 69177.88151752202
+
+kmean= KMeans(k_clust)
+kmean.fit(X) 
+labels=kmean.labels_
+
+clusters=pd.concat([data, pd.DataFrame({'cluster':labels})], axis=1)
+clusters.head()
+
+### Анализ результатов кластеризации
+
+#раскомментируйте код для получения информации о распределениях признаков для каждого кластера
+for c in clusters:
+     grid= sns.FacetGrid(clusters, col='cluster')
+     grid.map(plt.hist, c)
+
+Получена визуализация о распределениях признаков для каждого кластера -  прилагаемые 17 графиков (clusters_distribution.png)
+
+Помоги по этой визуализации распределения признаков для каждого кластера - сделать выводы. Дополнительно нужно придумать название-характеристику для каждого кластера.
+Мне очень нужны выводы, сделанные выше на русском языке и желательно в формате markdown.
+
+

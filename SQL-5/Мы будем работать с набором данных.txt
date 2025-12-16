@@ -1,0 +1,30 @@
+Мы будем работать с набором данных «Книги». Он включает две таблицы, хранящиеся в схеме other, — other.books и other.book_orders.
+
+Содержимое таблиц
+→ books ←
+Название поля
+Содержимое
+publishing_year 	год издания
+book_name	название книги
+author	автор
+language_code 	код языка, на котором написана книга
+author_rating 	рейтинг автора
+book_average_rating	средний рейтинг книги
+book_ratings_count	рейтинг книги
+genre	жанр
+publisher	издательство
+book_id	id книги
+
+
+→ book_orders ←
+Название поля
+Содержимое
+order_id	id заказа
+order_date	дата заказа
+book_id	id книги
+quantity	количество книг в заказе
+customer_id	id клиента
+book_name	название книги
+author	автор
+genre	жанр
+sale_price	цена

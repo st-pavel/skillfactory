@@ -1,0 +1,165 @@
+У нас есть схема sqlprotest, которая содержит таблицы с фильмами и их жанрами. Внимательно рассмотрите схему и изучите описание таблиц.
+
+Таблица фильмов movies хранит название фильма, год выхода и рейтинг.
+PK	id	integer	индекс
+	name	varchar(150)	Название фильма
+	year	int	год выхода фильма
+	rating	numeric(4.2),NULL	рейтинг
+
+Таблица жанров genres хранит название жанра и расширенное описание.
+PK	id	integer	индекс
+	name	varchar(150)	название жанра
+	description	text,NULL	расширенное описание
+
+
+У фильма может быть несколько жанров (например, жанры фильма «Большой куш» ― комедия и криминал) ― для этого есть связующая таблица movie_genres.
+связующая таблица movie_genres:
+PK	id	integer
+FK	movie_id	integer
+FK	genre_id	integer
+
+Далее мы будем работать с таблицами этой схемы. Рекомендуем перед началом работы над запросами исследовать содержимое таблиц.
+
+обращение к таблицам с префиксом sqlprotest, т.е. sqlprotest.movies, sqlprotest.movie_genres, sqlprotest.genres
+
+
+16. Напишите запрос, с помощью которого можно выбрать фильмы, не относящиеся к жанру 'Криминал'. Выведите все столбцы таблицы movies.
+
+Результат должен быть отсортирован по названию фильмов в алфавитном порядке.
+
+Подсказка: Все столбцы лучше всего вывести через *.
+
+
+Мой вариант
+
+SELECT 
+    m.*
+FROM 
+    sqlprotest.movies m
+JOIN 
+    sqlprotest.movie_genres mg ON mg.movie_id = m.id
+JOIN 
+    sqlprotest.genres g ON g.id = mg.genre_id
+EXCEPT    
+SELECT 
+    m.*
+FROM 
+    sqlprotest.movies m
+JOIN 
+    sqlprotest.movie_genres mg ON mg.movie_id = m.id
+JOIN 
+    sqlprotest.genres g ON g.id = mg.genre_id
+WHERE g.name LIKE 'Криминал'
+ORDER BY 2 ASC
+
+
+
+
+
+
+
+
+15. Напишите запрос, который выведет количество фильмов в каждом жанре для случаев, когда в жанре представлено три или больше фильмов.
+
+Столбцы к выводу:
+
+genre_name (имя жанра)
+movies_count (количество фильмов).
+Результат отсортируйте по убыванию количества фильмов.
+
+COPILOT:
+SELECT 
+    g.name AS genre_name,
+    COUNT(mg.movie_id) AS movies_count
+FROM 
+    sqlprotest.genres g
+JOIN 
+    sqlprotest.movie_genres mg ON g.id = mg.genre_id
+GROUP BY 
+    g.name
+HAVING 
+    COUNT(mg.movie_id) >= 3
+ORDER BY 
+    movies_count DESC;
+
+
+
+Мой вариант:
+SELECT 
+    g.name AS genre_name,
+    COUNT(mg.movie_id) AS movies_count
+FROM 
+    sqlprotest.genres g
+LEFT JOIN 
+    sqlprotest.movie_genres mg ON g.id = mg.genre_id
+LEFT JOIN 
+    sqlprotest.movies m ON mg.movie_id = m.id AND m.rating IS NOT NULL
+GROUP BY 
+    g.name
+HAVING
+    COUNT(mg.movie_id) >= 3
+ORDER BY 
+    movies_count DESC
+
+
+
+14. Напишите запрос, чтобы вывести все названия фильмов и их рейтинги. Если у фильма нет рейтинга, то проставьте 0 в качестве значения рейтинга.
+
+Результат отсортируйте по названию фильма в алфавитном порядке.
+
+Примечание: Буква "ё" в SQL не является алфавитной и не сортируется, не обращайте внимание на это во время решения задания.
+
+SELECT 
+    name,
+    COALESCE(rating, 0) AS rating
+FROM 
+    sqlprotest.movies
+ORDER BY 
+    name ASC;
+
+
+
+
+13. Напишите запрос, выводящий для каждого жанра средний рейтинг и количество фильмов этого жанра.
+
+Столбцы к выводу:
+
+genre_name (название жанра),
+average_rating (средний рейтинг),
+movie_count (количество фильмов).
+Результат отсортируйте по убыванию среднего рейтинга.
+
+Copilot:
+SELECT 
+    g.name AS genre_name,
+    AVG(m.rating) AS average_rating,
+    COUNT(mg.movie_id) AS movie_count
+FROM 
+    sqlprotest.genres g
+LEFT JOIN 
+    sqlprotest.movie_genres mg ON g.id = mg.genre_id
+LEFT JOIN 
+    sqlprotest.movies m ON mg.movie_id = m.id AND m.rating IS NOT NULL
+GROUP BY 
+    g.name
+ORDER BY 
+    average_rating DESC
+
+
+Мой вариант
+SELECT 
+    g.name AS genre_name,
+    AVG(m.rating) AS average_rating,
+    COUNT(m.id) AS movie_count
+FROM sqlprotest.movies m
+JOIN sqlprotest.movie_genres mg ON mg.movie_id = m.id
+JOIN sqlprotest.genres g ON g.id = mg.genre_id
+GROUP BY g.name
+ORDER BY 2 DESC 
+
+
+
+
+12. Напишите запрос, который покажет информацию по трём самым старым фильмам, у которых есть рейтинг. Выведите все столбцы таблицы movies.
+
+Подсказка: Все столбцы лучше всего вывести через select *.

@@ -1,0 +1,120 @@
+#Задание 6.1
+ratings = pd.pivot_table(
+    interactions_train_df,
+    values="eventStrength",
+    index="personId",
+    columns="contentId",
+).fillna(0)
+round(ratings.loc["-1032019229384696495", "943818026930898372"], 2)
+
+# Задание 6.2
+ratings_m = ratings.values
+ratings_m.mean()
+
+# Задание 6.3
+similarity_users = np.zeros((len(ratings_m), len(ratings_m)))
+for i in (range(len(ratings_m)-1)):
+    for j in range(i+1, len(ratings_m)):
+     
+        mask_uv = (ratings_m[i] != 0) & (ratings_m[j] != 0)
+        ratings_v = ratings_m[i, mask_uv]
+        ratings_u = ratings_m[j, mask_uv]
+
+        similarity_users[i,j] = np.corrcoef(ratings_v, ratings_u)[0, 1]
+        similarity_users[j,i] = similarity_users[i,j]
+similarity_users[3,40]
+
+# Задание 6.4
+interactions = (
+    interactions_train_df
+    .groupby('personId')['contentId'].agg(lambda x: list(x))
+    .reset_index()
+    .rename(columns={'contentId': 'true_train'})
+    .set_index('personId')
+)
+ 
+interactions['true_test'] = (
+    interactions_test_df
+    .groupby('personId')['contentId'].agg(lambda x: list(x))
+)
+ 
+interactions['true_test'] = [ [] if x is np.NaN else x for x in interactions['true_test'] ]
+
+prediction_user_based = []
+for i in range(len(similarity_users)):
+    users_sim = similarity_users[i] > 0
+    if not any(users_sim):
+        prediction_user_based.append([])
+    else:
+        tmp_recommend = np.argsort(ratings_m[users_sim].sum(axis=0))[::-1]
+        tmp_recommend = ratings.columns[tmp_recommend]
+        recommend = np.array(tmp_recommend)[~np.in1d(tmp_recommend, interactions.iloc[i]["true_train"])][:10]
+        prediction_user_based.append(list(recommend))
+interactions['prediction_user_based'] = prediction_user_based
+prediction_user_based[35][0]
+
+# Задание 6.5
+
+round(calc_precision('prediction_user_based'), 3)
+
+
+# Задание 6.6
+
+U, sigma, V = svd(ratings)
+U.max()
+
+
+# Задание 6.7
+
+k = 100
+s = np.diag(sigma[:k])
+U = U[:, 0:k]
+V = V[0:k, :]
+
+round(s.sum(), 2)
+
+#Задание 6.8
+
+new_ratings = pd.DataFrame(
+    U.dot(s).dot(V), index=ratings.index, columns=ratings.columns
+)
+top_k = 10
+predictions = []
+
+for personId in interactions.index:
+    prediction = (
+        new_ratings.loc[personId].sort_values(ascending=False).index.values
+    )
+
+    predictions.append(
+        list(
+            prediction[
+                ~np.in1d(prediction, interactions.loc[personId, "true_train"])
+            ]
+        )[:top_k]
+    )
+
+interactions["prediction_svd"] = predictions
+
+calc_precision("prediction_svd")
+
+#Задание 6.9
+
+from lightfm import LightFM
+from lightfm.cross_validation import random_train_test_split
+from lightfm.evaluation import precision_at_k, recall_at_k  
+from scipy.sparse import csr_matrix
+
+ratings_matrix = csr_matrix(ratings) # передаём в качестве аргументов в функцию выставленный рейтинг (это будут значения матрицы), а также id пользователя и id книги (это будут индексы для строк и столбцов матрицы)
+model = LightFM(loss='warp', #определяем функцию потерь
+                random_state=13, #фиксируем случайное разбиение
+                learning_rate=0.05, #темп обучения
+                no_components=100) #размерность вектора для представления данных в модели
+
+train,test = random_train_test_split(ratings_matrix, test_percentage=0.3, random_state=13)
+model.fit(train)
+prec_score = precision_at_k(model, test).mean()
+
+
+print(round(prec_score, 2))
+

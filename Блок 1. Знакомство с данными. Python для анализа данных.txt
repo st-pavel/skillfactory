@@ -1,0 +1,12 @@
+Блок 1. Знакомство с данными. Python для анализа данных
+
+PYTHON-8. Инструменты для Data Science
+PYTHON-9. Библиотека Numpy
+PYTHON-10. Введение в Pandas
+PYTHON-11. Базовые приёмы работы с данными в Pandas
+PYTHON-12. Продвинутые методы работы с данными в Pandas
+PYTHON-13. Визуализация данных
+PYTHON-14. Очистка данных
+PYTHON-15. Принципы ООП в Python и отладка кода
+PYTHON-15.1. Markdown и GIT для создания портфолио
+PROJECT-1. Анализ резюме из HeadHunter
